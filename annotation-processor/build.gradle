@@ -1,0 +1,50 @@
+plugins {
+    id 'java'
+}
+
+group 'com.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.javassist:javassist:3.29.0-GA'
+}
+
+tasks.register('processNonNullAnnotations', JavaExec) {
+    mainClass = 'io.rong.imlib.internal.annotation.notnull.ReturnIfNullProcessor' // 使用 mainClass 替代 main
+    classpath = sourceSets.main.runtimeClasspath
+    args = [file("${buildDir}/classes/java/main").absolutePath, file("${buildDir}/rc-modified-classes").absolutePath]
+
+    doFirst {
+        file("${buildDir}/rc-modified-classes").mkdirs() // 确保输出目录存在
+    }
+
+    doLast {
+        copy {
+            from file("${buildDir}/rc-modified-classes")
+            into file("${buildDir}/classes/java/main")
+        }
+    }
+
+    // 声明任务的输出目录
+    outputs.dir file("${buildDir}/classes/java/main")
+}
+
+tasks.named('classes').configure {
+    finalizedBy processNonNullAnnotations
+}
+
+// 添加 jar 任务
+tasks.jar {
+    dependsOn("processNonNullAnnotations")
+    archiveFileName = "annotation-processor-${version}.jar" // 设置 JAR 文件的名称
+    from sourceSets.main.output
+}
+
+// 可以通过指定 task 的依赖关系来自动触发 jar 任务
+tasks.named('build').configure {
+    dependsOn jar
+}
