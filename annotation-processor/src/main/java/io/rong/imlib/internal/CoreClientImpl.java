@@ -1,33 +1,49 @@
 package io.rong.imlib.internal;
 
-import io.rong.imlib.CoreClient;
 import io.rong.imlib.callback.*;
 import io.rong.imlib.enums.ErrorCode;
-import io.rong.imlib.internal.annotation.notnull.ReturnIfNull;
+import io.rong.imlib.internal.guard.annotation.InitGuard;
+import io.rong.imlib.internal.guard.annotation.ParamGuard;
 
-public class CoreClientImpl implements CoreClient {
+import java.util.concurrent.atomic.AtomicBoolean;
+
+public class CoreClientImpl {
     private static final String TAG = "CoreClientImpl";
+    private final AtomicBoolean sInitialized = new AtomicBoolean(false);
 
     private static class SingletonHolder {
-        static CoreClient sInstance = new CoreClientImpl();
+        static CoreClientImpl sInstance = new CoreClientImpl();
     }
 
-    public static CoreClient getInstance() {
+    public static CoreClientImpl getInstance() {
         return SingletonHolder.sInstance;
     }
 
-    @Override
+
+    public void init(String appKey) {
+        this.sInitialized.set(true);
+    }
+
+    public boolean isInit() {
+        return this.sInitialized.get();
+    }
+
+
+    @InitGuard
     public void sendMessage(
-            @ReturnIfNull(ErrorCode.InvalidContent)
+            @ParamGuard(ErrorCode.InvalidContent)
             String content,
+            @ParamGuard(ErrorCode.InvalidLocalPath)
+            String localPath,
             IData0Callback callback
     ) {
         System.out.println(TAG + " sendMessage");
     }
 
-    @Override
+
+    @InitGuard
     public void sendMediaMessage(
-            @ReturnIfNull(ErrorCode.InvalidLocalPath)
+            @ParamGuard(ErrorCode.InvalidLocalPath)
             String localPath,
             IData1Callback<String> callback
     ) {
@@ -36,27 +52,27 @@ public class CoreClientImpl implements CoreClient {
         }
     }
 
-    @Override
+    @InitGuard
     public void joinChatroom(
-            @ReturnIfNull(ErrorCode.InvalidRoomId)
+            @ParamGuard(ErrorCode.InvalidRoomId)
             String roomId,
             IData2Callback<String, Integer> callback
     ) {
         System.out.println(TAG + " joinChatroom");
     }
 
-    @Override
+    @InitGuard
     public void joinExistChatroom(
-            @ReturnIfNull(ErrorCode.InvalidRoomId)
+            @ParamGuard(ErrorCode.InvalidRoomId)
             String roomId,
             IData3Callback<String, Integer, String> callback
     ) {
         System.out.println(TAG + " joinExistChatroom");
     }
 
-    @Override
+    @InitGuard
     public void syncData(
-            @ReturnIfNull(ErrorCode.InvalidRoomId)
+            @ParamGuard(ErrorCode.InvalidRoomId)
             String data
     ) {
 

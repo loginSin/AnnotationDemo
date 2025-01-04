@@ -3,12 +3,15 @@ package io.rong.imlib.enums;
 public enum ErrorCode {
     Unknown(-100),
     Success(0),
+    NotInit(1),
 
-    InvalidContent(2),
+    InvalidToken(100),
 
-    InvalidRoomId(3),
+    InvalidContent(200),
 
-    InvalidLocalPath(4);
+    InvalidRoomId(300),
+
+    InvalidLocalPath(400);
 
     private int code;
 

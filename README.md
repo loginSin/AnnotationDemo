@@ -9,7 +9,8 @@
 目标
 
 1. annotation-processor 统一所有的 Callback
-2. annotation-processor 实现 ReturnIfNull 注解，和注解生成代码，保证使用 ReturnIfNull 的注解在编译 class 时可以正常做 空保护
+2. annotation-processor 实现 InitGuard 注解，保证使用 InitGuard 的注解在编译 class 时做初始化保护 
+3. annotation-processor 实现 ParamGuard 注解，和注解生成代码，保证使用 ParamGuard 的注解在编译 class 时可以正常做 空保护
 
 ## 生成 jar
 
@@ -33,5 +34,5 @@ app 依赖的是修改后的 class 文件生成的 jar
 
 为了方便修改 class ，必须强制要求所有方法的 Callback 必须是 ICallback 的子类
 
-如果有新增的 Callback 类，必须在 ReturnIfNullProcessor.callbackNameArray 进行配置
+如果有新增的 Callback 类，必须在 GuardProcessor.callbackNameArray 进行配置
 

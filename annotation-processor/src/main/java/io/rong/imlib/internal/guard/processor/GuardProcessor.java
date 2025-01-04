@@ -1,17 +1,20 @@
-package io.rong.imlib.internal.annotation.notnull;
+package io.rong.imlib.internal.guard.processor;
 
 import javassist.*;
+import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.ParameterAnnotationsAttribute;
 import javassist.bytecode.annotation.Annotation;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Objects;
 
-public class ReturnIfNullProcessor {
+public class GuardProcessor {
     private static String outputPath = null;
-    private static final String annotationPath = "io.rong.imlib.internal.annotation.notnull.ReturnIfNull";
+    private static final String initGuardPath = "io.rong.imlib.internal.guard.annotation.InitGuard";
+    private static final String annotationPath = "io.rong.imlib.internal.guard.annotation.ParamGuard";
     private static final String[] callbackNameArray =
             {
                     "io/rong/imlib/callback/ICallback",
@@ -22,10 +25,10 @@ public class ReturnIfNullProcessor {
             };
 
     public static void main(String[] args) throws NotFoundException, CannotCompileException, IOException {
-        System.out.println("ReturnIfNullProcessor main");
+        System.out.println("GuardProcessor main");
 
         if (args.length < 2) {
-            System.out.println("Usage: ReturnIfNullProcessor <inputDir> <outputDir>");
+            System.out.println("Usage: GuardProcessor <inputDir> <outputDir>");
             return;
         }
         String inputPath = args[0];
@@ -40,7 +43,7 @@ public class ReturnIfNullProcessor {
     private static void processClasses(File inputDir, File outputDir) throws NotFoundException, CannotCompileException, IOException {
         ClassPool pool = ClassPool.getDefault();
         pool.appendClassPath(inputDir.getAbsolutePath());
-        System.out.println("ReturnIfNullProcessor processClasses");
+        System.out.println("GuardProcessor processClasses");
 
         // 递归处理目录下的所有文件
         processDirectory(pool, inputDir, outputDir, inputDir);
@@ -52,6 +55,8 @@ public class ReturnIfNullProcessor {
                 // 递归处理子目录
                 processDirectory(pool, file, outputDir, baseDir);
             } else if (file.isFile() && file.getName().endsWith(".class")) {
+                System.out.println("==========class start==========");
+
                 // 处理 .class 文件
                 String classFilePath = file.getAbsolutePath();
                 String className = getClassName(baseDir, classFilePath);
@@ -62,6 +67,8 @@ public class ReturnIfNullProcessor {
 
                 processCtClass(cc, outputDir, baseDir, file);
 
+                System.out.println("==========class end==========\n");
+
             }
         }
     }
@@ -69,28 +76,33 @@ public class ReturnIfNullProcessor {
     private static void processCtClass(CtClass cc, File outputDir, File baseDir, File file) throws CannotCompileException, IOException {
         // 处理方法及其注解
         for (CtMethod method : cc.getDeclaredMethods()) {
-            MethodInfo methodInfo = method.getMethodInfo();
+            System.out.println("\n----------method start----------");
 
+            String methodName = method.getName();
             String signature = method.getSignature();
+            System.out.println("method name is " + methodName + "(" + signature + ")");
+
             boolean hasCallback = hasCallbackInMethod(signature);
 
-            ParameterAnnotationsAttribute paramAttr = (ParameterAnnotationsAttribute) methodInfo.getAttribute(ParameterAnnotationsAttribute.visibleTag);
+            ArrayList<String> newCodeList = new ArrayList<>();
 
-            if (paramAttr != null) {
-                Annotation[][] annotations = paramAttr.getAnnotations();
-                for (int i = 0; i < annotations.length; i++) {
-                    for (Annotation annotation : annotations[i]) {
-                        if (annotation.getTypeName().equals(annotationPath)) {
-                            String valueMemberName = "value";
-                            Object valueObj = annotation.getMemberValue(valueMemberName);
-                            String errorCodeString = valueObj.toString();
-                            System.out.println("Adding null check for method: " + method.getName() + " parameter index: " + i + " value : " + errorCodeString);
-                            String newCode = getParamCheckCode(method, i, hasCallback, errorCodeString);
-                            method.insertBefore(newCode);
-                        }
-                    }
+            // 获取 InitGuard 方法注解的代码段
+            String initGuardCode = getInitGuardCode(method, hasCallback);
+            newCodeList.add(initGuardCode);
+
+            // 获取 ParamGuard 参数注解的代码段
+            ArrayList<String> paramCodeList = getParamGuardCode(method, hasCallback);
+            newCodeList.addAll(paramCodeList);
+
+            System.out.println("start insert code");
+            for (int i = newCodeList.size() - 1; i >= 0; i--) {
+                String code = newCodeList.get(i);
+                System.out.println("insertBefore code is: " + code);
+                if (!code.isEmpty()) {
+                    method.insertBefore(code);
                 }
             }
+            System.out.println("----------method end----------\n");
         }
 
         writeToClass(cc, outputDir, baseDir, file);
@@ -125,7 +137,60 @@ public class ReturnIfNullProcessor {
         return file.getAbsolutePath().substring(baseDir.getAbsolutePath().length() + 1);
     }
 
-    private static String getParamCheckCode(CtMethod method, int paramIndex, boolean hasCallback, String errorCodeString) {
+    // 获取 InitParam 代码段
+    private static String getInitGuardCode(CtMethod method, boolean hasCallback) throws CannotCompileException {
+        String initGuardCode = "";
+        // 检查方法是否有 @InitGuard 注解
+        MethodInfo methodInfo = method.getMethodInfo();
+        AnnotationsAttribute attr = (AnnotationsAttribute) methodInfo.getAttribute(AnnotationsAttribute.visibleTag);
+        if (attr != null && attr.getAnnotation(initGuardPath) != null) {
+            System.out.println("Adding InitGuard for method: " + method.getName());
+            initGuardCode = genInitGuardCode(hasCallback);
+        }
+        return initGuardCode;
+    }
+
+    // 生成新方法以生成初始化保护代码
+    private static String genInitGuardCode(boolean hasCallback) {
+        String code = "";
+        String isInitString = "io.rong.imlib.internal.CoreClientImpl.getInstance().isInit()";
+        if (hasCallback) {
+            String notInitCodeString = "io.rong.imlib.enums.ErrorCode.NotInit";
+            code = "{ if (! " + isInitString + ") { if (callback != null) { callback.onError(" + notInitCodeString + "); } return; } }";
+        } else {
+            code = "{ if (!" + isInitString + ") return; }";
+        }
+        System.out.println("getInitGuardCode : " + code);
+        return code;
+    }
+
+    // 获取一个方法所有的 ParamGuard 代码
+    private static ArrayList<String> getParamGuardCode(CtMethod method, boolean hasCallback) throws CannotCompileException {
+        ArrayList<String> codeList = new ArrayList<>();
+        MethodInfo methodInfo = method.getMethodInfo();
+        ParameterAnnotationsAttribute paramAttr = (ParameterAnnotationsAttribute) methodInfo.getAttribute(ParameterAnnotationsAttribute.visibleTag);
+
+        if (paramAttr != null) {
+            Annotation[][] annotations = paramAttr.getAnnotations();
+            for (int i = 0; i < annotations.length; i++) {
+                for (Annotation annotation : annotations[i]) {
+                    if (annotation.getTypeName().equals(annotationPath)) {
+                        String valueMemberName = "value";
+                        Object valueObj = annotation.getMemberValue(valueMemberName);
+                        String errorCodeString = valueObj.toString();
+                        System.out.println("Adding ParamGuard for method: " + method.getName() + " parameter index: " + i + " value : " + errorCodeString);
+                        String newCode = genParamGuardCode(method, i, hasCallback, errorCodeString);
+                        codeList.add(newCode);
+                    }
+                }
+            }
+        }
+
+        return codeList;
+    }
+
+    // 生成 ParamGuard 代码
+    private static String genParamGuardCode(CtMethod method, int paramIndex, boolean hasCallback, String errorCodeString) {
         String code = "{ if ($" + (paramIndex + 1) + " == null) return; }";
         if (hasCallback) {
             code = "{ if ($" + (paramIndex + 1) + " == null) { if (callback != null) { callback.onError( " + errorCodeString + "); return;}  }}";
@@ -135,7 +200,6 @@ public class ReturnIfNullProcessor {
     }
 
     private static boolean hasCallbackInMethod(String signature) {
-        System.out.println("signature : " + signature);
         for (String callbackName : callbackNameArray) {
             if (signature.contains(callbackName)) {
                 return true;

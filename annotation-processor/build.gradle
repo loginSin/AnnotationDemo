@@ -14,7 +14,7 @@ dependencies {
 }
 
 tasks.register('processNonNullAnnotations', JavaExec) {
-    mainClass = 'io.rong.imlib.internal.annotation.notnull.ReturnIfNullProcessor' // 使用 mainClass 替代 main
+    mainClass = 'io.rong.imlib.internal.guard.processor.GuardProcessor' // 使用 mainClass 替代 main
     classpath = sourceSets.main.runtimeClasspath
     args = [file("${buildDir}/classes/java/main").absolutePath, file("${buildDir}/rc-modified-classes").absolutePath]
 
