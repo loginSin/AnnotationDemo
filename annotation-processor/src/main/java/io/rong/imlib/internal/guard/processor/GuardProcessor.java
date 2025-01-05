@@ -14,7 +14,7 @@ import java.util.Objects;
 public class GuardProcessor {
     private static String outputPath = null;
     private static final String initGuardPath = "io.rong.imlib.internal.guard.annotation.InitGuard";
-    private static final String annotationPath = "io.rong.imlib.internal.guard.annotation.ParamGuard";
+    private static final String paramGuardPath = "io.rong.imlib.internal.guard.annotation.ParamGuard";
     private static final String[] callbackNameArray =
             {
                     "io/rong/imlib/callback/ICallback",
@@ -174,7 +174,7 @@ public class GuardProcessor {
             Annotation[][] annotations = paramAttr.getAnnotations();
             for (int i = 0; i < annotations.length; i++) {
                 for (Annotation annotation : annotations[i]) {
-                    if (annotation.getTypeName().equals(annotationPath)) {
+                    if (annotation.getTypeName().equals(paramGuardPath)) {
                         String valueMemberName = "value";
                         Object valueObj = annotation.getMemberValue(valueMemberName);
                         String errorCodeString = valueObj.toString();
