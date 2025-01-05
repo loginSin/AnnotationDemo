@@ -21,7 +21,8 @@ public class GuardProcessor {
                     "io/rong/imlib/callback/IData0Callback",
                     "io/rong/imlib/callback/IData1Callback",
                     "io/rong/imlib/callback/IData2Callback",
-                    "io/rong/imlib/callback/IData3Callback"
+                    "io/rong/imlib/callback/IData3Callback",
+                    "io/rong/imlib/callback/IData4Callback"
             };
 
     public static void main(String[] args) throws NotFoundException, CannotCompileException, IOException {
