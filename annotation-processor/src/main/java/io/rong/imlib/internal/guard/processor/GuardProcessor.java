@@ -85,30 +85,36 @@ public class GuardProcessor {
 
             boolean hasCallback = hasCallbackInMethod(signature);
 
-            ArrayList<String> newCodeList = new ArrayList<>();
-
             // 获取 InitGuard 方法注解的代码段
             String initGuardCode = getInitGuardCode(method, hasCallback);
-            newCodeList.add(initGuardCode);
 
             // 获取 ParamGuard 参数注解的代码段
             ArrayList<String> paramCodeList = getParamGuardCode(method, hasCallback);
-            newCodeList.addAll(paramCodeList);
 
-            System.out.println("start insert code");
-            for (int i = newCodeList.size() - 1; i >= 0; i--) {
-                String code = newCodeList.get(i);
-                System.out.println("insertBefore code is: " + code);
-                if (!code.isEmpty()) {
-                    method.insertBefore(code);
-                }
-            }
+            // 插入代码
+            insertCodeToMethod(method, initGuardCode, paramCodeList);
+
             System.out.println("----------method end----------\n");
         }
 
         writeToClass(cc, outputDir, baseDir, file);
     }
 
+    private static void insertCodeToMethod(CtMethod method, String initGuardCode, ArrayList<String> paramCodeList) throws CannotCompileException {
+        ArrayList<String> newCodeList = new ArrayList<>();
+        newCodeList.add(initGuardCode);
+        newCodeList.addAll(paramCodeList);
+
+        System.out.println("start insert code");
+        for (int i = newCodeList.size() - 1; i >= 0; i--) {
+            String code = newCodeList.get(i);
+            System.out.println("insertBefore code is: " + code);
+            if (!code.isEmpty()) {
+                method.insertBefore(code);
+            }
+        }
+
+    }
 
     private static void writeToClass(CtClass cc, File outputDir, File baseDir, File file) throws CannotCompileException, IOException {
         // 计算相对路径并写入输出目录
