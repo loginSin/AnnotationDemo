@@ -22,6 +22,25 @@ public class CoreClient {
         this.impl.sendMessage(content, localPath , callback);
     }
 
+    /**
+     * # 示例代码
+     * <pre>
+     *     CoreClient.getInstance().sendMediaMessage("1234", new IData1Callback<String>() {
+     *             &#64Override
+     *             public void onSuccess(String data) {
+     *                 System.out.println("CoreClient sendMediaMessage onSuccess " + data);
+     *             }
+     *
+     *             &#64Override
+     *             public void onError(ErrorCode errCode) {
+     *                 System.out.println("CoreClient sendMediaMessage onError " + errCode);
+     *             }
+     *         });
+     * </pre>
+     * @param localPath 本地路径
+     * @param callback 回调
+     * @since 1
+     */
     public void sendMediaMessage(String localPath, IData1Callback<String> callback) {
         this.impl.sendMediaMessage(localPath, callback);
     }

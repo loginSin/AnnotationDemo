@@ -175,11 +175,11 @@ public class GuardProcessor {
             for (int i = 0; i < annotations.length; i++) {
                 for (Annotation annotation : annotations[i]) {
                     if (annotation.getTypeName().equals(paramGuardPath)) {
-                        String valueMemberName = "value";
-                        Object valueObj = annotation.getMemberValue(valueMemberName);
-                        String errorCodeString = valueObj.toString();
+                        String errorCodeString = getParamGuardMemberValueString(annotation, "value");
+                        String logTagString = getParamGuardMemberValueString(annotation, "logTag");
+
                         System.out.println("Adding ParamGuard for method: " + method.getName() + " parameter index: " + i + " value : " + errorCodeString);
-                        String newCode = genParamGuardCode(method, i, hasCallback, errorCodeString);
+                        String newCode = genParamGuardCode(method, i, hasCallback, errorCodeString, logTagString);
                         codeList.add(newCode);
                     }
                 }
@@ -189,11 +189,20 @@ public class GuardProcessor {
         return codeList;
     }
 
+    private static String getParamGuardMemberValueString(Annotation annotation, String memberValueName) {
+        Object valueObj = annotation.getMemberValue(memberValueName);
+        if (valueObj != null) {
+            return valueObj.toString();
+        }
+        return "";
+    }
+
     // 生成 ParamGuard 代码
-    private static String genParamGuardCode(CtMethod method, int paramIndex, boolean hasCallback, String errorCodeString) {
-        String code = "{ if ($" + (paramIndex + 1) + " == null) return; }";
+    private static String genParamGuardCode(CtMethod method, int paramIndex, boolean hasCallback, String errorCodeString, String logTagString) {
+        String logString = "System.out.println(" + logTagString + " + \":\" + " + errorCodeString + ");";
+        String code = "{ if ($" + (paramIndex + 1) + " == null) " + logString + " return; }";
         if (hasCallback) {
-            code = "{ if ($" + (paramIndex + 1) + " == null) { if (callback != null) { callback.onError( " + errorCodeString + "); return;}  }}";
+            code = "{ if ($" + (paramIndex + 1) + " == null) { " + logString + "if (callback != null) { callback.onError( " + errorCodeString + "); return;}  }}";
         }
         System.out.println("getParamCheckCode : " + code);
         return code;

@@ -14,4 +14,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.PARAMETER)
 public @interface ParamGuard {
     ErrorCode value();
+    String logTag();
 }

@@ -31,9 +31,9 @@ public class CoreClientImpl {
 
     @InitGuard
     public void sendMessage(
-            @ParamGuard(ErrorCode.InvalidContent)
+            @ParamGuard(value = ErrorCode.InvalidContent, logTag = "sendMessage-E")
             String content,
-            @ParamGuard(ErrorCode.InvalidLocalPath)
+            @ParamGuard(value = ErrorCode.InvalidLocalPath, logTag = "sendMessage-E")
             String localPath,
             IData0Callback callback
     ) {
@@ -43,7 +43,7 @@ public class CoreClientImpl {
 
     @InitGuard
     public void sendMediaMessage(
-            @ParamGuard(ErrorCode.InvalidLocalPath)
+            @ParamGuard(value = ErrorCode.InvalidLocalPath, logTag = "sendMediaMessage-E")
             String localPath,
             IData1Callback<String> callback
     ) {
@@ -54,7 +54,7 @@ public class CoreClientImpl {
 
     @InitGuard
     public void joinChatroom(
-            @ParamGuard(ErrorCode.InvalidRoomId)
+            @ParamGuard(value = ErrorCode.InvalidRoomId, logTag = "joinChatroom-E")
             String roomId,
             IData2Callback<String, Integer> callback
     ) {
@@ -63,7 +63,7 @@ public class CoreClientImpl {
 
     @InitGuard
     public void joinExistChatroom(
-            @ParamGuard(ErrorCode.InvalidRoomId)
+            @ParamGuard(value = ErrorCode.InvalidRoomId, logTag = "joinExistChatroom-E")
             String roomId,
             IData3Callback<String, Integer, String> callback
     ) {
@@ -72,7 +72,7 @@ public class CoreClientImpl {
 
     @InitGuard
     public void syncData(
-            @ParamGuard(ErrorCode.InvalidRoomId)
+            @ParamGuard(value = ErrorCode.InvalidRoomId, logTag = "joinExistChatroom-E")
             String data
     ) {
 

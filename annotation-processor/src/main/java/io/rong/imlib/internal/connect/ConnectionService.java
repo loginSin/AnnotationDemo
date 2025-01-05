@@ -10,7 +10,7 @@ public class ConnectionService {
 
     @InitGuard
     public void connect(
-            @ParamGuard(ErrorCode.InvalidToken) String token,
+            @ParamGuard(value = ErrorCode.InvalidToken, logTag = "connect-E") String token,
             IData1Callback<String> callback
     ) {
         System.out.println(TAG + " connect");
